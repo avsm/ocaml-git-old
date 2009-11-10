@@ -22,6 +22,10 @@ let _ =
   let cmd = new Cmd.git () in
   let stdout s =
     Lwt_stream.iter (fun s -> eprintf "stdout: %s\n" s) s in
-  let l = cmd#exec ~stdout ["log"] in
-  Lwt_main.run l
+  let t =
+    lwt i = cmd#exec ~stdout ["log"] in
+    eprintf "retcode: %d\n" i;
+    return ()
+  in
+  Lwt_main.run t
  

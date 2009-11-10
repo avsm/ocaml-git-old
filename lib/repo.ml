@@ -16,31 +16,36 @@
  *)
 
 open Lwt
-open Lwt_process
-open Printf
+open Lwt_io
 
-let default_git_cmd = "git"
+exception InvalidRepository of string
 
-class git ?(cmd=default_git_cmd) ?dir () =
+let is_dir path = try Sys.is_directory path with _ -> false 
+
+class repo ~path =
+  
+  let wd =
+    (* TODO: work back through the path to find a .git subdir *)
+    if is_dir path then path else raise (InvalidRepository path) in
+
+  let gitdir = 
+    (* TODO: initialize the repo if the .git doesnt exist *)
+    let f = Filename.concat wd ".git" in
+    if is_dir f then f else raise (InvalidRepository f) in
+
+  let gitfile f =
+    Filename.concat gitdir f in
+
   object(self)
-   
-  val cwd = match dir with None -> Sys.getcwd () | Some d -> d 
-  val cmd = cmd
 
-  method exec ?stdout ?stderr args =
-    let c = "git", Array.of_list (cmd :: args) in
-    with_process_full c
-      (fun pf ->
-        Lwt_io.close pf#stdin >>
-        (match stdout with
-           None -> return ()
-         | Some fn -> fn (Lwt_io.read_lines pf#stdout)) >>
-        (match stderr with
-           None -> return ()
-         | Some fn -> fn (Lwt_io.read_lines pf#stderr)) >>
-        lwt status = pf#close in
-        match status with
-          Unix.WEXITED r -> return r
-        | _ -> return (-1)
-      )
+    method description =
+      with_file ~mode:input (gitfile "description") 
+        (fun ic -> 
+           return (read_lines ic))
+   
+    method set_description lines =
+      with_file ~mode:output (gitfile "description")
+        (fun oc ->
+           write_lines oc lines)
+     
   end
