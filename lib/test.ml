@@ -16,28 +16,12 @@
  *)
 
 open Lwt
-open Lwt_process
 open Printf
 
-let default_git_cmd = "git"
-
-class git ?(cmd=default_git_cmd) ?dir () =
-  object(self)
-   
-  val cwd = match dir with None -> Sys.getcwd () | Some d -> d 
-  val cmd = cmd
-
-  method exec ?stdout ?stderr args =
-    let c = "git", Array.of_list (cmd :: args) in
-    with_process_full c
-      (fun pf ->
-        Lwt_io.close pf#stdin >>
-        (match stdout with
-           None -> return ()
-         | Some fn -> fn (Lwt_io.read_lines pf#stdout)) >>
-        (match stderr with
-           None -> return ()
-         | Some fn -> fn (Lwt_io.read_lines pf#stderr))
-      )
+let _ = 
+  let cmd = new Cmd.git () in
+  let stdout s =
+    Lwt_stream.iter (fun s -> eprintf "stdout: %s\n" s) s in
+  let l = cmd#exec ~stdout ["log"] in
+  Lwt_main.run l
  
-  end

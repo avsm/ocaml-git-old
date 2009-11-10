@@ -1,7 +1,11 @@
 OCAMLMAKEFILE=../OCamlMakefile
 
-SOURCES=cmd.ml
+SOURCES=cmd.ml test.ml
 RESULT=git
-PACKS=unix lwt lwt.unix
+PACKS=unix lwt lwt.unix pcre
+
+.PHONY: all
+all: dnc
+	@ :
 
 include $(OCAMLMAKEFILE)
