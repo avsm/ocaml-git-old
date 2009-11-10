@@ -1,0 +1,12 @@
+._d/
+._ncdi/
+*.annot
+*.cmo
+*.o
+*.cma
+*.cmx
+*.cmi
+*.swp
+*.opt
+*.a
+*.cmxa
