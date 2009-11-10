@@ -1,6 +1,6 @@
 OCAMLMAKEFILE=../OCamlMakefile
 
-SOURCES=cmd.ml repo.ml test.ml
+SOURCES=cmd.ml head.ml repo.ml  test.ml 
 RESULT=git
 PACKS=unix lwt lwt.unix pcre
 ANNOTATE=yes

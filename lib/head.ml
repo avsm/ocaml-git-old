@@ -18,17 +18,24 @@
 open Lwt
 open Printf
 
-let _ = 
-  let gitdir = Sys.getcwd () in
-  let cmd = new Cmd.git () in
+(* XXX: using \001 as separator since Pcre fails with \000 *)
+let null = String.make 1 (Char.chr 1)
+
+let find_all ?(opts=[]) repo =
+  let opts =
+    `Bare "refs/heads" ::
+    `StrOpt ("sort", "committerdate")  :: 
+    `StrOpt ("format", "%(refname)%01%(objectname)") ::
+    opts in
+  
   let stdout s =
-    Lwt_stream.iter (fun s -> eprintf "stdout: %s\n" s) s in
-  let t =
-    lwt i = cmd#exec ~stdout "log" [ `BoolOpt ("raw",true)] in
-    eprintf "retcode: %d\n" i;
-    let repo = new Repo.repo ~path:gitdir in
-    lwt i = repo#heads in
-    eprintf "retcode: %d\n" i;
-    return ()
-  in
-  Lwt_main.run t
+    Lwt_stream.iter 
+     (fun s ->
+        eprintf "find_all: %s\n%!" s;
+        match Pcre.split ~pat:null ~max:2 s with
+          [name;ids] ->
+            eprintf "   name=%s ids=%s\n%!" name ids;
+        | _ -> ()
+     ) s in
+  let git : Cmd.git = repo#git in
+  git#exec ~stdout "for-each-ref" opts

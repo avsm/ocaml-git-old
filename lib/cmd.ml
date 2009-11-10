@@ -21,14 +21,25 @@ open Printf
 
 let default_git_cmd = "git"
 
+type arg = [ `Bare of string | `StrOpt of string * string | `BoolOpt of string * bool ]
+
 class git ?(cmd=default_git_cmd) ?dir () =
   object(self)
    
   val cwd = match dir with None -> Sys.getcwd () | Some d -> d 
   val cmd = cmd
 
-  method exec ?stdout ?stderr args =
-    let c = "git", Array.of_list (cmd :: args) in
+  method exec ?stdout ?stderr base (args: arg list) =
+
+    let argmap = base :: List.map (function
+        `Bare x -> x
+      | `StrOpt (k,v) -> sprintf "--%s=%s" k v
+      | `BoolOpt (k,v) -> if v then "--" ^ k else ""
+    ) args in
+
+    let c = "git", Array.of_list (cmd :: argmap) in
+    eprintf "exec: %s\n%!" (String.concat " " (cmd :: argmap));
+
     with_process_full c
       (fun pf ->
         Lwt_io.close pf#stdin >>
@@ -43,4 +54,5 @@ class git ?(cmd=default_git_cmd) ?dir () =
           Unix.WEXITED r -> return r
         | _ -> return (-1)
       )
+
   end

@@ -36,7 +36,9 @@ class repo ~path =
   let gitfile f =
     Filename.concat gitdir f in
 
-  object(self)
+  let gitobj = new Cmd.git ~dir:wd () in
+
+  object(repo)
 
     method description =
       with_file ~mode:input (gitfile "description") 
@@ -47,5 +49,10 @@ class repo ~path =
       with_file ~mode:output (gitfile "description")
         (fun oc ->
            write_lines oc lines)
+
+    method git = gitobj
+
+    method heads =
+      Head.find_all repo
      
   end
