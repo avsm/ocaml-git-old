@@ -18,21 +18,31 @@
 open Lwt
 open Printf
 
-let _ = 
-  let gitdir = Sys.getcwd () in
-  let cmd = new Cmd.git () in
-  let stdout s =
-    Lwt_stream.iter (fun s -> eprintf "stdout: %s\n" s) s in
-  let t =
-    lwt i = cmd#exec ~stdout "log" [ `BoolOpt ("raw",true)] in
-    eprintf "retcode: %d\n" i;
-    let repo = new Repo.repo ~path:gitdir in
-    lwt h = repo#heads in
-    Lwt_util.iter (fun (k,v) -> 
-      eprintf "heads: %s -> %s\n%!" k v; 
-      lwt cs = Commit.find_all ~repo ~cref:v () in
-      eprintf "commitx: %s\n%!" (String.concat ", " cs);
-      return ()
-    ) h
-  in
-  Lwt_main.run t
+class commit repo id =
+  object(self)
+
+  method id_short =
+    String.sub id 0 7
+
+  method summary = ()   
+
+  end
+
+let find_all ?(opts=[]) ?(path="") ~repo ~cref () =
+  let opts =
+     `Bare cref ::
+     (`Bare "--") ::
+     (`Bare path) ::
+     (`StrOpt ("pretty", "raw")) ::
+     opts in
+
+  let commits = ref [] in
+  let stdout s = 
+    lwt l = Lwt_stream.fold
+      (fun s a -> s :: a) s [] in
+    return (commits := l) in
+
+  let git : Cmd.git = repo#git in
+  git#exec ~stdout "rev-list" opts >>
+  return (!commits)
+

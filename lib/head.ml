@@ -27,15 +27,16 @@ let find_all ?(opts=[]) repo =
     `StrOpt ("sort", "committerdate")  :: 
     `StrOpt ("format", "%(refname)%01%(objectname)") ::
     opts in
-  
+ 
+  let heads = ref [] in 
   let stdout s =
-    Lwt_stream.iter 
-     (fun s ->
-        eprintf "find_all: %s\n%!" s;
+    lwt l = Lwt_stream.fold
+     (fun s a ->
         match Pcre.split ~pat:null ~max:2 s with
-          [name;ids] ->
-            eprintf "   name=%s ids=%s\n%!" name ids;
-        | _ -> ()
-     ) s in
+        | [name;ids] -> (name,ids) :: a
+        | _ -> a
+     ) s [] in
+    return (heads := l) in 
   let git : Cmd.git = repo#git in
-  git#exec ~stdout "for-each-ref" opts
+  git#exec ~stdout "for-each-ref" opts >>
+  return (!heads)
