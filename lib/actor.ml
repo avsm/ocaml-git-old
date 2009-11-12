@@ -18,21 +18,23 @@
 open Lwt
 open Printf
 
-let _ = 
-  let gitdir = Sys.getcwd () in
-  let cmd = new Cmd.git () in
-  let stdout s =
-    Lwt_stream.iter (fun s -> eprintf "stdout: %s\n" s) s in
-  let t =
-    lwt i = cmd#exec ~stdout "log" [ `BoolOpt ("raw",true)] in
-    eprintf "retcode: %d\n" i;
-    let repo = new Repo.repo ~path:gitdir in
-    lwt h = repo#heads in
-    Lwt_util.iter (fun (k,v) -> 
-      eprintf "heads: %s -> %s\n%!" k v; 
-      lwt cs = Commit.find_all ~repo ~cref:v () in
-     (* eprintf "commitx: %s\n%!" (String.concat ", " (List.map (fun x -> x#id_abbrev) cs)); *)
-      return ()
-    ) h
-  in
-  Lwt_main.run t
+class actor ~name ?email () =
+  object(self)
+
+    method str = 
+      match email with 
+        None -> name
+      | Some e -> sprintf "%s <%s>" name e
+
+    method name = name
+
+    method email = email
+
+  end
+
+let of_string s =
+  let rex = Pcre.regexp "(.*) <(.+?)>" in
+  match Pcre.split ~rex s with
+    [ ""; name; email ] -> new actor ~name ~email ()
+  | _ -> new actor ~name:s ()
+
