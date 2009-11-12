@@ -23,42 +23,46 @@ open OUnit
 
 let git_dir = ref ""
 
+let stderr = Lwt_stream.iter (fun x -> printf "stderr: %s\n%!" x)
+let stdout = Lwt_stream.iter (fun x -> printf "stdout: *%s*\n%!" x)
+
 let test_init () =
   let git = new Cmd.git ~dir:!git_dir () in
-  lwt e = git#exec "status" [] in
-  "nonzero exit" @? (e=0);
+  lwt i = git#exec "log" [] in
+  eprintf "retcode: %d\n%!" i;
   return ()
 
 let test_heads () = 
-  let repo = new Repo.repo ~path:!git_dir in
+  lwt repo = Repo.repo !git_dir in
   lwt heads = repo#heads () in
+  List.iter (fun (name,id) -> printf "heads: %s %s\n%!" name (string_of_id id)) heads;
   return ()
 
-(*
-  let stdout s =
-    Lwt_stream.iter (fun s -> eprintf "stdout: %s\n" s) s in
-  let t =
-    lwt i = cmd#exec ~stdout "log" [ `BoolOpt ("raw",true)] in
-    eprintf "retcode: %d\n" i;
-    let repo = new Repo.repo ~path:gitdir in
-    lwt h = repo#heads () in
-    Lwt_util.iter (fun (k,cref) -> 
-      let id = string_of_id cref in
-      eprintf "heads: %s -> %s\n%!" k id; 
-      lwt cs = Commit.find_all ~repo ~cref () in
-      eprintf "commitx: %s\n%!" (String.concat ", " (List.map (fun x -> string_of_id x#id_abbrev ^ ": " ^ x#summary) cs)); 
-      return ()
-    ) h
-  in
-  Lwt_main.run t
-*)
+let test_raw_log () =
+  let git = new Cmd.git ~dir:!git_dir () in
+  lwt i = git#exec "log" [ `BoolOpt ("raw",true)] in
+  printf "retcode: %d\n" i;
+  return ()
+
+let test_commits () =
+  lwt repo = Repo.repo !git_dir in
+  lwt heads = repo#heads () in
+  Lwt_util.iter (fun (k,cref) -> 
+    let id = string_of_id cref in
+    eprintf "heads: %s -> %s\n%!" k id; 
+    lwt cs = Commit.find_all ~repo ~cref () in
+    eprintf "commitx: %s\n%!" (String.concat ", " (List.map (fun x -> string_of_id x#id_abbrev ^ ": " ^ x#summary) cs)); 
+    return ()
+  ) heads
 
 let (>::>>) a b =
-  a >:: (fun () -> Lwt_main.run (b ()))
+  a >:: (fun () -> let x = Lwt_main.run (b ()) in printf "done\n%!"; x )
 
 let suite = [
   "init" >::>> test_init;
   "heads" >::>> test_heads;
+  "raw_log" >::>> test_raw_log;
+  "commits" >::>> test_commits;
 ]
 
 let _ = 
