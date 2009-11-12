@@ -17,6 +17,7 @@
 
 open Lwt
 open Printf
+open Git_types
 
 let _ = 
   let gitdir = Sys.getcwd () in
@@ -29,10 +30,10 @@ let _ =
     let repo = new Repo.repo ~path:gitdir in
     lwt h = repo#heads () in
     Lwt_util.iter (fun (k,cref) -> 
-      let id = Git_types.string_of_id cref in
+      let id = string_of_id cref in
       eprintf "heads: %s -> %s\n%!" k id; 
       lwt cs = Commit.find_all ~repo ~cref () in
-     (* eprintf "commitx: %s\n%!" (String.concat ", " (List.map (fun x -> x#id_abbrev) cs)); *)
+      eprintf "commitx: %s\n%!" (String.concat ", " (List.map (fun x -> string_of_id x#id_abbrev ^ ": " ^ x#summary) cs)); 
       return ()
     ) h
   in
