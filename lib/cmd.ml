@@ -21,6 +21,9 @@ open Printf
 
 let default_git_cmd = "git"
 
+(* XXX a library really shouldnt override signals *)
+let _ = Sys.set_signal Sys.sigpipe Sys.Signal_ignore
+
 class git ?(debug=false) ?(cmd=default_git_cmd) ?dir () : Git_types.git =
   let dir = match dir with None -> Sys.getcwd () | Some d -> d in
   object(self)
@@ -42,19 +45,20 @@ class git ?(debug=false) ?(cmd=default_git_cmd) ?dir () : Git_types.git =
     with_process_full c
       (fun pf ->
         let sout = match stdout with
-           None -> return ()
+           None -> Lwt_io.close pf#stdout
          | Some fn -> 
             fn (Lwt_io.read_lines pf#stdout) 
         in
         let serr = match stderr with
-           None -> return ()
+           None -> Lwt_io.close pf#stderr
          | Some fn -> fn (Lwt_io.read_lines pf#stderr) in
         let sin = Lwt_io.close pf#stdin in
         join [sout; serr; sin] >>
         lwt status = pf#close in
         match status with
           Unix.WEXITED r -> return r
-        | _ -> return (-1)
+        | Unix.WSTOPPED _ -> return (-1)
+        | Unix.WSIGNALED s -> return (-2)
       )
 
   end
