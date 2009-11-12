@@ -4,6 +4,7 @@ all:
 
 clean:
 	@cd lib && $(MAKE) clean
+	@cd lib_test && $(MAKE) clean
 	@rm -rf doc/
 
 doc:
