@@ -27,10 +27,11 @@ let _ =
     lwt i = cmd#exec ~stdout "log" [ `BoolOpt ("raw",true)] in
     eprintf "retcode: %d\n" i;
     let repo = new Repo.repo ~path:gitdir in
-    lwt h = repo#heads in
-    Lwt_util.iter (fun (k,v) -> 
-      eprintf "heads: %s -> %s\n%!" k v; 
-      lwt cs = Commit.find_all ~repo ~cref:v () in
+    lwt h = repo#heads () in
+    Lwt_util.iter (fun (k,cref) -> 
+      let id = Git_types.string_of_id cref in
+      eprintf "heads: %s -> %s\n%!" k id; 
+      lwt cs = Commit.find_all ~repo ~cref () in
      (* eprintf "commitx: %s\n%!" (String.concat ", " (List.map (fun x -> x#id_abbrev) cs)); *)
       return ()
     ) h

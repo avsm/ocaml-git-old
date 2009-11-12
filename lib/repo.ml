@@ -22,7 +22,10 @@ exception InvalidRepository of string
 
 let is_dir path = try Sys.is_directory path with _ -> false 
 
-class repo ~path =
+(* XXX: using \001 as separator since Pcre fails with \000 *)
+let null = String.make 1 (Char.chr 1)
+
+class repo ~path : Git_types.repo =
   
   let wd =
     (* TODO: work back through the path to find a .git subdir *)
@@ -52,7 +55,24 @@ class repo ~path =
 
     method git = gitobj
 
-    method heads =
-      Head.find_all repo
-     
+    method heads ?(opts=[]) () =
+      let opts =
+        `Bare "refs/heads" ::
+        `StrOpt ("sort", "committerdate")  ::
+        `StrOpt ("format", "%(refname)%01%(objectname)") ::
+         opts in
+
+      let heads = ref [] in
+      let stdout s =
+        lwt l = Lwt_stream.fold
+          (fun s a ->
+            match Pcre.split ~pat:null ~max:2 s with
+            | [name;id] -> (name, Git_types.id_of_string id) :: a
+            | _ -> a
+          ) s [] in
+         return (heads := l) in
+      let git : Cmd.git = repo#git in
+      git#exec ~stdout "for-each-ref" opts >>
+      return (!heads)
+
   end

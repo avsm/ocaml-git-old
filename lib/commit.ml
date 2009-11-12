@@ -28,10 +28,12 @@ type args = {
   message: string list;
 }
 
-class commit args repo id  =
+class commit args repo id : Git_types.commit =
+  let id = Git_types.string_of_id id in
   object(self)
 
   val message_str = lazy(String.concat "\n" args.message)
+  val id_abbrev = lazy(String.sub id 0 7)
   val summary = lazy(
     match args.message with
       [] -> ""
@@ -46,8 +48,8 @@ class commit args repo id  =
   method message = Lazy.force message_str
   method summary = Lazy.force summary
 
-  method id = id
-  method id_abbrev = String.sub id 0 7
+  method id = Git_types.id_of_string id
+  method id_abbrev = Git_types.id_of_string (Lazy.force id_abbrev)
 
   end
 
@@ -74,7 +76,7 @@ let junk_newline =
 
 let parse_one s =
   lwt rid = Lwt_stream.next s in
-  let id = fsplit "commit" rid in
+  let id = Git_types.id_of_string (fsplit "commit" rid) in
   lwt rtree = Lwt_stream.next s in
   let tree = fsplit "tree" rtree in
   lwt rparents = Lwt_stream.get_while
@@ -104,6 +106,7 @@ let parse_raw s =
   getall []
 
 let find_all ?max_count ?skip ~repo ~cref () =
+  let cref = Git_types.string_of_id cref in
   let mkmc c = `StrOpt ("max_count", string_of_int c) in
   let mksk c = `StrOpt ("skip", string_of_int c) in
   let opts =

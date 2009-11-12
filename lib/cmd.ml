@@ -21,15 +21,13 @@ open Printf
 
 let default_git_cmd = "git"
 
-type arg = [ `Bare of string | `StrOpt of string * string | `BoolOpt of string * bool ]
-
-class git ?(cmd=default_git_cmd) ?dir () =
+class git ?(cmd=default_git_cmd) ?dir () : Git_types.git =
   object(self)
    
   val cwd = match dir with None -> Sys.getcwd () | Some d -> d 
   val cmd = cmd
 
-  method exec ?stdout ?stderr base (args: arg list) =
+  method exec ?stdout ?stderr base (args: Git_types.arg list) =
 
     let argmap = base :: List.map (function
         `Bare x -> x

@@ -18,7 +18,7 @@
 open Lwt
 open Printf
 
-class actor ~name ?email () =
+class actor ~name ?email () : Git_types.actor =
   object(self)
 
     method str = 
