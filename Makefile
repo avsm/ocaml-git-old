@@ -9,6 +9,6 @@ clean:
 doc:
 	@cd lib && $(MAKE) doc
 
-test:
-	$(MAKE) all
-	./lib/git
+test: 
+	@cd lib && $(MAKE)
+	@cd lib_test && $(MAKE) run

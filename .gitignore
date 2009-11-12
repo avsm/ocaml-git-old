@@ -1,4 +1,5 @@
 ._d/
+._bcdi/
 ._ncdi/
 *.annot
 *.cmo
@@ -10,4 +11,4 @@
 *.opt
 *.a
 *.cmxa
-/lib/git
+/lib_test/run_test

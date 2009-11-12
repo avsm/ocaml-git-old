@@ -17,11 +17,24 @@
 
 open Lwt
 open Printf
+open Git
 open Git_types
+open OUnit
 
-let _ = 
-  let gitdir = Sys.getcwd () in
-  let cmd = new Cmd.git () in
+let git_dir = ref ""
+
+let test_init () =
+  let git = new Cmd.git ~dir:!git_dir () in
+  lwt e = git#exec "status" [] in
+  "nonzero exit" @? (e=0);
+  return ()
+
+let test_heads () = 
+  let repo = new Repo.repo ~path:!git_dir in
+  lwt heads = repo#heads () in
+  return ()
+
+(*
   let stdout s =
     Lwt_stream.iter (fun s -> eprintf "stdout: %s\n" s) s in
   let t =
@@ -38,3 +51,17 @@ let _ =
     ) h
   in
   Lwt_main.run t
+*)
+
+let (>::>>) a b =
+  a >:: (fun () -> Lwt_main.run (b ()))
+
+let suite = [
+  "init" >::>> test_init;
+  "heads" >::>> test_heads;
+]
+
+let _ = 
+  git_dir := try Sys.getenv "GIT_TEST" with _ -> Sys.getcwd () in
+  eprintf "Using repo: %s\n" !git_dir;
+  run_test_tt_main ("Git" >::: suite)
