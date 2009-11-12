@@ -1,2 +1,2 @@
 exception InvalidRepository of string
-class repo : path:string -> Git_types.repo
+val repo : ?debug: bool -> string -> Git_types.repo Lwt.t

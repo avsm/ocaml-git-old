@@ -25,21 +25,12 @@ let is_dir path = try Sys.is_directory path with _ -> false
 (* XXX: using \001 as separator since Pcre fails with \000 *)
 let null = String.make 1 (Char.chr 1)
 
-class repo ~path : Git_types.repo =
+class repo ~debug ~wd ~gitdir : Git_types.repo =
   
-  let wd =
-    (* TODO: work back through the path to find a .git subdir *)
-    if is_dir path then path else raise (InvalidRepository path) in
-
-  let gitdir = 
-    (* TODO: initialize the repo if the .git doesnt exist *)
-    let f = Filename.concat wd ".git" in
-    if is_dir f then f else raise (InvalidRepository f) in
-
   let gitfile f =
     Filename.concat gitdir f in
 
-  let gitobj = new Cmd.git ~dir:wd () in
+  let gitobj = new Cmd.git ~debug ~dir:wd () in
 
   object(repo)
 
@@ -76,3 +67,15 @@ class repo ~path : Git_types.repo =
       return (!heads)
 
   end
+
+let repo ?(debug=false) path = 
+  lwt wd =
+    (* TODO: work back through the path to find a .git subdir *)
+    if is_dir path then return path else fail (InvalidRepository path) in
+
+  lwt gitdir = 
+    (* TODO: initialize the repo if the .git doesnt exist *)
+    let f = Filename.concat wd ".git" in
+    if is_dir f then return f else fail (InvalidRepository f) in
+
+  return (new repo ~debug ~wd ~gitdir)

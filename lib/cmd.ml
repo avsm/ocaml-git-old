@@ -21,32 +21,36 @@ open Printf
 
 let default_git_cmd = "git"
 
-class git ?(cmd=default_git_cmd) ?dir () : Git_types.git =
+class git ?(debug=false) ?(cmd=default_git_cmd) ?dir () : Git_types.git =
+  let dir = match dir with None -> Sys.getcwd () | Some d -> d in
   object(self)
-   
-  val cwd = match dir with None -> Sys.getcwd () | Some d -> d 
-  val cmd = cmd
+  
+  val work_tree = "--work-tree=" ^ dir
+  val git_dir = "--git-dir=" ^ (Filename.concat dir ".git")
 
   method exec ?stdout ?stderr base (args: Git_types.arg list) =
-
-    let argmap = base :: List.map (function
+    let argmap = git_dir :: work_tree :: base :: List.map (function
         `Bare x -> x
       | `StrOpt (k,v) -> sprintf "--%s=%s" k v
       | `BoolOpt (k,v) -> if v then "--" ^ k else ""
     ) args in
 
     let c = "git", Array.of_list (cmd :: argmap) in
-    eprintf "exec: %s\n%!" (String.concat " " (cmd :: argmap));
+    if debug then 
+      eprintf "exec: %s\n%!" (String.concat " " (cmd :: argmap));
 
     with_process_full c
       (fun pf ->
-        Lwt_io.close pf#stdin >>
-        (match stdout with
+        let sout = match stdout with
            None -> return ()
-         | Some fn -> fn (Lwt_io.read_lines pf#stdout)) >>
-        (match stderr with
+         | Some fn -> 
+            fn (Lwt_io.read_lines pf#stdout) 
+        in
+        let serr = match stderr with
            None -> return ()
-         | Some fn -> fn (Lwt_io.read_lines pf#stderr)) >>
+         | Some fn -> fn (Lwt_io.read_lines pf#stderr) in
+        let sin = Lwt_io.close pf#stdin in
+        join [sout; serr; sin] >>
         lwt status = pf#close in
         match status with
           Unix.WEXITED r -> return r
