@@ -8,7 +8,7 @@ DOC_DIR=../doc
 ANNOTATE=yes
 
 .PHONY: all
-all: dnc
+all: dcl dncl
 	@ :
 
 include $(OCAMLMAKEFILE)
