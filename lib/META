@@ -1,0 +1,6 @@
+name = "git"
+version = "0.1"
+description = "Git revision control system wrapper"
+requires = "lwt lwt.unix pcre"
+archive(byte) = "git.cma"
+archive(native) = "git.cmxa"

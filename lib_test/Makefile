@@ -11,8 +11,14 @@ run: dnc
 RESULT= run_test
 SOURCES= test.ml
 ANNOTATE=yes
+
+# to test with built version
 INCDIRS=../lib
 LIBS=git
 PACKS=unix lwt lwt.unix ounit pcre
+
+# to test with installed version
+# comment out previous and use this
+# PACKS=git ounit
 
 -include $(OCAMLMAKEFILE)

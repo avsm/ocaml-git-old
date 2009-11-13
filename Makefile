@@ -13,3 +13,9 @@ doc:
 test: 
 	@cd lib && $(MAKE)
 	@cd lib_test && $(MAKE) run
+
+install:
+	@cd lib && $(MAKE) install
+
+uninstall:
+	@cd lib && $(MAKE) uninstall

@@ -11,4 +11,11 @@ ANNOTATE=yes
 all: dcl dncl
 	@ :
 
+.PHONY: install uninstall
+install:
+	ocamlfind install git META git.{a,cm{a,xa}} *.cmi
+
+uninstall:
+	ocamlfind remove git
+
 include $(OCAMLMAKEFILE)
