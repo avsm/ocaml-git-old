@@ -63,9 +63,11 @@ let sfsplit t s =
   return (fsplit t x)
 
 let tsplit t s =
-  let rex = Pcre.regexp "^.+? (.*) (\\d+) .*$" in
+  let rex = Pcre.regexp "^([^ ]+) (.+) (\\d+) ([+-][0-9]+)$" in
   match Pcre.split ~rex s with
-    [ ""; actor; epochstr ] ->
+    [ ""; kind; actor; epochstr; tz ] ->
+       if kind <> t then failwith (
+        Printf.sprintf "Expected “%s” got “%s” in “%s”." t kind s);
        let epoch = float_of_string epochstr in
        let actor = Actor.of_string actor in
        actor, epoch
