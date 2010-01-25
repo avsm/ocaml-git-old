@@ -14,7 +14,7 @@ all: dcl dncl
 
 .PHONY: install uninstall
 install:
-	ocamlfind install git META git.{a,cm{a,xa}} *.cmi
+	ocamlfind install git META git.a git.cma git.cmxa *.cmi
 
 uninstall:
 	ocamlfind remove git
