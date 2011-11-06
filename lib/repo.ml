@@ -1,4 +1,4 @@
-(*pp camlp4o -I `ocamlfind query lwt.syntax` pa_lwt.cmo *)
+(*pp camlp4o -I `ocamlfind query lwt.syntax` lwt-syntax-options.cma lwt-syntax.cma *)
 (*
  * Copyright (c) 2009 Anil Madhavapeddy <anil@recoil.org>
  *
